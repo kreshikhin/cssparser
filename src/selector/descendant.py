@@ -5,8 +5,10 @@ class Descendant:
         self.parent = parent
         self.child = child
     def match(self, node):
-        while node.parentNode.nodeName!='#document':
-              if node.parentNode.nodeName == self.parent:
+        self.node = node
+        while self.node.parentNode.nodeName!='#document':
+              if self.node.parentNode.nodeName == self.parent:
                  return True
+              self.node = self.node.parentNode
         return False
         
