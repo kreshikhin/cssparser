@@ -18,7 +18,7 @@ class TestCss2Py(unittest.TestCase):
         divNode = self.dom.firstChild
         self.assertFalse(self.selector.match(divNode))
         pNode = divNode.firstChild
-        self.assertTrue(self.selector.match(divNode))
+        self.assertTrue(self.selector.match(pNode))
         
 if __name__ == '__main__':
     unittest.main()
