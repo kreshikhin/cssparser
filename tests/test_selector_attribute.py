@@ -31,7 +31,7 @@ class TestAttributeSelector2(unittest.TestCase):
 
 class TestAttributeSelector3(unittest.TestCase):
     def setUp(self):
-        self.attribute = Attribute('attr', 'nya','ny')
+        self.attribute = Attribute('attr', 'ny','~=')
         self.dom = xml.dom.minidom.parseString('<div><h1>bla</h1><h2 attr="nya" a="5">bl</h2></div>')
     def test_match(self):
         self.node = self.dom.firstChild
@@ -39,5 +39,34 @@ class TestAttributeSelector3(unittest.TestCase):
         self.node = self.node.firstChild
         self.assertTrue(self.attribute.match(self.node.nextSibling))
 
+class TestAttributeSelector4(unittest.TestCase):
+    def setUp(self):
+        self.attribute = Attribute('attr', 'y','~=')
+        self.dom = xml.dom.minidom.parseString('<div><h1>bla</h1><h2 attr="nya" a="5">bl</h2></div>')
+    def test_match(self):
+        self.node = self.dom.firstChild
+        self.assertFalse(self.attribute.match(self.node))
+        self.node = self.node.firstChild
+        self.assertTrue(self.attribute.match(self.node.nextSibling))
+
+class TestAttributeSelector5(unittest.TestCase):
+    def setUp(self):
+        self.attribute = Attribute('attr', 'y','|=')
+        self.dom = xml.dom.minidom.parseString('<div><h1>bla</h1><h2 attr="nya" a="5">bl</h2></div>')
+    def test_match(self):
+        self.node = self.dom.firstChild
+        self.assertFalse(self.attribute.match(self.node))
+        self.node = self.node.firstChild
+        self.assertFalse(self.attribute.match(self.node.nextSibling))
+
+class TestAttributeSelector6(unittest.TestCase):
+    def setUp(self):
+        self.attribute = Attribute('attr', 'ny','|=')
+        self.dom = xml.dom.minidom.parseString('<div><h1>bla</h1><h2 attr="nya" a="5">bl</h2></div>')
+    def test_match(self):
+        self.node = self.dom.firstChild
+        self.assertFalse(self.attribute.match(self.node))
+        self.node = self.node.firstChild
+        self.assertTrue(self.attribute.match(self.node.nextSibling))
 if __name__ == '__main__':
    unittest.main()

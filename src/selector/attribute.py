@@ -11,11 +11,10 @@ class Attribute:
         self.val = valeu
         self.comp = comparison
     def match(self, node):
-        print(node.getAttribute(self.attr))
-        attrString = node.getAttribute(self.attr)
-        if attrString == self.val or attrString!='' or self.comp == '|=' and attrString.find(self.attr)==0:
-            return True
-        return False
-       
-            
-           
+        if self.comp == '~=':
+            return self.val in node.getAttribute(self.attr)
+        if self.comp == '|=':
+            return node.getAttribute(self.attr).find(self.val)==0
+        if self.val != None:
+            return node.getAttribute(self.attr)==self.val
+        return node.hasAttribute(self.attr)
