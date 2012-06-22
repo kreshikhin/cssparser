@@ -5,7 +5,7 @@ class Adjacent():
         self.e = E.lower()
         self.f = F.lower()
     def match(self, node):
-        if node.nextSibling is None:
+        if node.nextSibling is None or self.f!=node.nodeName.lower():
            return False
         if node.nextSibling.nodeName.lower() == self.e:
            return True

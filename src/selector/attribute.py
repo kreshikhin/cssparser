@@ -6,9 +6,9 @@ class Attribute:
     E[foo~="warning"]	    Matches any E element whose "foo" attribute value is a list of space-separated values, one of which is exactly equal to "warning".
     E[lang|="en"]           Matches any E element whose "lang" attribute has a hyphen-separated list of values beginning (from the left) with "en".
     """ 
-    def __init__(self,attr,valeu = None,comparison ='='):
+    def __init__(self,attr,value = None,comparison ='='):
         self.attr = attr
-        self.val = valeu
+        self.val = value
         self.comp = comparison
     def match(self, node):
         if self.comp == '~=':

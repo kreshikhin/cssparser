@@ -22,6 +22,7 @@ class TestDescendantSelectorDiv(unittest.TestCase):
           for i in range(2):
              self.Nodep = self.Nodep.firstChild             
           self.assertTrue(self.selectorp.match(self.Nodep))
+          self.assertFalse(self.selectordiv.match(self.Nodep))
 
 if __name__ == '__main__':
     unittest.main()
