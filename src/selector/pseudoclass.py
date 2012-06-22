@@ -9,6 +9,12 @@ class Pseudoclass:
     E:focus          	Matches E during certain user actions. 	The dynamic pseudo-classes
     E:lang(c) 	        Matches element of type E if it is in (human) language c (the document language specifies how language is determined).
     """
-    
+    def __init__(self, firstChild, parent):
+        self.fChild = firstChild
+        self.parent = parent
+
     def match(self, node):
-        pass
+        #if node.getAttribute('href')!=''
+         #  return True
+        if node.previousSibling is None and node.nodeName == self.fChild:
+           return node.parentNode.nodeName == self.parent 
