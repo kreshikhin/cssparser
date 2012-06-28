@@ -12,7 +12,7 @@ from selector.readonly import ReadOnly
 class TestReadOnlySelector(unittest.TestCase):
     def setUp(self):
         self.ro = ReadOnly('h1')
-        self.node = xml.dom.minidom.parseString('<div><b><h1 readonly="" >test</h1></b></div>').firstChild
+        self.node = xml.dom.minidom.parseString('<div><b><h1 readonly>test</h1></b></div>').firstChild
         
     def test_match(self):
         self.assertFalse(self.ro.match(self.node))
