@@ -53,9 +53,12 @@ combinator
   : '+' S*
   | '>' S*
   ;
-unary_operator
-  : '-' | '+'
-  ;
+*/
+
+unary_operator: '-' | '+'
+;
+
+/*
 property
   : IDENT S*
   ;
@@ -70,9 +73,13 @@ simple_selector
   : element_name [ HASH | class | attrib | pseudo ]*
   | [ HASH | class | attrib | pseudo ]+
   ;
-class
-  : '.' IDENT
-  ;
+*/
+
+class:
+    '.' IDENT
+;
+
+/*
 element_name
   : IDENT | '*'
   ;
@@ -109,11 +116,10 @@ function
  * after the "#"; e.g., "#000" is OK, but "#abcd" is not.
  */
 
-/*
-hexcolor
-  : HASH S*
-  ;
-*/
+hexcolor:
+    HASH S*
+;
+
 
 %%
 
