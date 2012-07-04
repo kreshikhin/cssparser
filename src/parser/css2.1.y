@@ -107,31 +107,30 @@ page_declarations
     | page_declarations ';' spaces
 ;
 
-pseudo_page
+pseudo_page // : ':' IDENT S* ;
     : ':' IDENT spaces
 ;
 
-operator
+operator // : '/' S* | ',' S* ;
     : '/' spaces
     | ',' spaces
 ;
 
-combinator
+combinator // : '+' S* | '>' S* ;
     : '+' spaces
     | '>' spaces
 ;
 
-
-unary_operator
+unary_operator // : '-' | '+' ;
     : '-'
     | '+'
 ;
 
-property
+property // : IDENT S* ;
     : IDENT spaces
 ;
 
-ruleset
+ruleset // : selector [ ',' S* selector ]* '{' S* declaration? [ ';' S* declaration? ]* '}' S* ;
     : selectors '{' spaces declarations '}' spaces
 ;
 
@@ -147,7 +146,7 @@ declarations
     | declarations ';' spaces
 ;
 
-selector // simple_selector [ combinator selector | S+ [ combinator? selector ]? ]?
+selector // : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]? ;
     : simple_selector combinator selector
     | simple_selector S spaces combinator selector
     | simple_selector S spaces selector
@@ -155,7 +154,7 @@ selector // simple_selector [ combinator selector | S+ [ combinator? selector ]?
     | simple_selector
 ;
 
-simple_selector
+simple_selector // : element_name [ HASH | class | attrib | pseudo ]* | [ HASH | class | attrib | pseudo ]+ ;
     : element_name simple_selector_right_part_unreq
     | simple_selector_right_part_req
 ;
@@ -177,19 +176,17 @@ simple_selector_right_part
     | pseudo
 ;
 
-class
+class // : '.' IDENT ;
     : '.' IDENT
-        {   print("class\n");  }
 ;
 
-element_name
+element_name // : IDENT | '*' ;
     : IDENT
     | '*'
-        {   print("");  }
 ;
 
 
-attrib //: '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S* [ IDENT | STRING ] S* ]? ']';
+attrib // : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S* [ IDENT | STRING ] S* ]? ']';
     : '[' spaces IDENT spaces attrib_block ']'
 ;
 
@@ -209,7 +206,7 @@ attrib_block_string
     | STRING
 ;
 
-pseudo
+pseudo // : ':' [ IDENT | FUNCTION S* [IDENT S*]? ')' ] ;
     : ':' pseudo_block
 ;
 pseudo_block
@@ -222,7 +219,7 @@ pseudo_block_function_ident
     | IDENT spaces
 ;
 
-declaration
+declaration // : property ':' S* expr prio? ;
     : property ':' spaces expr declaration_prio
 ;
 
@@ -231,7 +228,7 @@ declaration_prio
     | prio
 ;
 
-prio
+prio // : IMPORTANT_SYM S* ;
     : IMPORTANT_SYM spaces
 ;
 
@@ -246,7 +243,9 @@ expr_right_part
     | expr_right_part term
 ;
 
-term
+term // : unary_operator?
+     // [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* | TIME S* | FREQ S* ]
+     // | STRING S* | IDENT S* | URI S* | hexcolor | function ;
     : term_numeral_operator term_numeral spaces
     | STRING spaces | IDENT spaces | URI spaces | hexcolor | function
 ;
@@ -267,8 +266,8 @@ term_numeral
     | FREQ
 ;      
 
-function:
-    FUNCTION spaces expr ')' spaces
+function // : FUNCTION S* expr ')' S* ;
+    : FUNCTION spaces expr ')' spaces
 ;
 
 /*
@@ -277,7 +276,7 @@ function:
  * after the "#"; e.g., "#000" is OK, but "#abcd" is not.
  */
 
-hexcolor
+hexcolor // : HASH S* ;
     : HASH spaces
 ;
 
