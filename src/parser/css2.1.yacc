@@ -33,21 +33,41 @@ import
 media
   : MEDIA_SYM S* media_list '{' S* ruleset* '}' S*
   ;
-media_list
-  : medium [ COMMA S* medium]*
-  ;
 */
+
+media_list
+    : medium media_list_right_part
+;
+
+media_list_right_part
+    : ',' spaces medium
+;
+
+media_list_right_part_multiple
+    :
+    | media_list_right_part
+    | media_list_right_part_multiple media_list_right_part
+;
 
 medium
     : IDENT spaces
 ;
 
-/*
 page
-  : PAGE_SYM S* pseudo_page?
-    '{' S* declaration? [ ';' S* declaration? ]* '}' S*
-  ;
-*/
+    : PAGE_SYM spaces pseudo_page_unrequired
+    '{' spaces declaration_unrequired page_block '}' spaces
+;
+
+page_block
+    :
+    |  ';' spaces declaration_unrequired 
+    | page_block  ';' spaces declaration_unrequired 
+;
+
+pseudo_page_unrequired
+    :
+    | pseudo_page
+;
 
 pseudo_page
     : ':' IDENT spaces
@@ -74,19 +94,75 @@ property
     : IDENT spaces
 ;
 
-/*
 ruleset
-  : selector [ ',' S* selector ]*
-    '{' S* declaration? [ ';' S* declaration? ]* '}' S*
-  ;
+    : selector ruleset_selector_block '{' spaces declaration_unrequired ruleset_declaration_block '}' spaces
+;
+
+ruleset_selector_block
+    :
+    | ',' spaces selector
+    | ruleset_selector_block ',' spaces selector
+;
+
+
+ruleset_declaration_block
+    :
+    | ';' spaces declaration_unrequired
+    | ruleset_selector_block ';' spaces declaration_unrequired
+;
+
+declaration_unrequired
+    :
+    | declaration
+;
+
 selector
-  : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]?
-  ;
+    : simple_selector selector_right_part
+;
+
+
+
+selector_right_part
+    :
+    | combinator selector
+    | selector_spaces 
+;
+
+selector_right_part_selector
+    :
+    | combinator_unrequired selector
+;
+
+combinator_unrequired
+    :
+    | combinator
+;
+
+selector_spaces
+    : S spaces
+;
+
 simple_selector
-  : element_name [ HASH | class | attrib | pseudo ]*
-  | [ HASH | class | attrib | pseudo ]+
-  ;
-*/
+  : element_name simple_selector_right_part_unreq
+  | simple_selector_right_part_req
+;
+
+simple_selector_right_part_unreq
+    :
+    | simple_selector_right_part_req
+;
+
+simple_selector_right_part_req
+    : simple_selector_right_part
+    | simple_selector_right_part_req simple_selector_right_part
+;
+
+simple_selector_right_part
+    : HASH
+    | class
+    | attrib
+    | pseudo
+;
 
 class
     : '.' IDENT
@@ -99,39 +175,92 @@ element_name
         {   print("");  }
 ;
 
-/*
+
 attrib
-  : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S*
-    [ IDENT | STRING ] S* ]? ']'
-  ;
+    : '[' spaces IDENT spaces ']'
+;
+
+attrib_block
+    :
+    | attrib_block_eq spaces attrib_block_string spaces
+;
+
+attrib_block_eq
+    : '='
+    | INCLUDES
+    | DASHMATCH
+;
+
+attrib_block_string
+    : IDENT
+    | STRING
+;
+
 pseudo
-  : ':' [ IDENT | FUNCTION S* [IDENT S*]? ')' ]
-  ;
+    : ':' pseudo_block
+;
+pseudo_block
+    : IDENT
+    | FUNCTION spaces pseudo_block_function_ident ')'
+;
+
+pseudo_block_function_ident
+    :
+    | IDENT spaces
+;
+
 declaration
-  : property ':' S* expr prio?
-  ;
-*/
+    : property ':' spaces expr declaration_prio
+;
+
+declaration_prio
+    :
+    | prio
+;
 
 prio
     : IMPORTANT_SYM spaces
 ;
 
-/*
 expr
-  : term [ operator? term ]*
-  ;
+    : term
+    | term expr_right_part
+;
+
+expr_right_part
+    : operator term
+    | expr_right_part operator term
+;
+
+expr_operator
+    :
+    | operator
+;
+
 term
-  : unary_operator?
-    [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* |
-      TIME S* | FREQ S* ]
-  | STRING S* | IDENT S* | URI S* | hexcolor | function
-  ;
-*/  
-/*
+    : term_numeral_operator term_numeral spaces
+    | STRING spaces | IDENT spaces | URI spaces | hexcolor | function
+;
+
+term_numeral_operator
+    :
+    | unary_operator
+;
+
+term_numeral
+    : NUMBER
+    | PERCENTAGE
+    | LENGTH
+    | EMS
+    | EXS
+    | ANGLE
+    | TIME
+    | FREQ
+;      
+
 function:
     FUNCTION spaces expr ')' spaces
 ;
-*/
 
 /*
  * There is a constraint on the color that it must
