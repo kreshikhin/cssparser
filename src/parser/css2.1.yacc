@@ -30,10 +30,17 @@ import
   : IMPORT_SYM S*
     [STRING|URI] S* media_list? ';' S*
   ;
-media
-  : MEDIA_SYM S* media_list '{' S* ruleset* '}' S*
-  ;
 */
+
+media
+    : MEDIA_SYM spaces media_list '{' spaces rulesets '}' spaces
+;
+
+rulesets
+    :
+    | ruleset
+    | ruleset rulesets
+;
 
 media_list
     : medium media_list_right_part
