@@ -36,32 +36,45 @@ media
 media_list
   : medium [ COMMA S* medium]*
   ;
+*/
+
 medium
-  : IDENT S*
-  ;
+    : IDENT spaces
+;
+
+/*
 page
   : PAGE_SYM S* pseudo_page?
     '{' S* declaration? [ ';' S* declaration? ]* '}' S*
   ;
-pseudo_page
-  : ':' IDENT S*
-  ;
-operator
-  : '/' S* | ',' S*
-  ;
-combinator
-  : '+' S*
-  | '>' S*
-  ;
 */
 
-unary_operator: '-' | '+'
+pseudo_page
+    : ':' IDENT spaces
+;
+
+operator
+    : '/' spaces
+    | ',' spaces
+;
+
+combinator
+    : '+' spaces
+    | '>' spaces
+;
+
+
+unary_operator
+    : '-'
+    | '+'
+    {   print("unary operator\n"); }
+;
+
+property
+    : IDENT spaces
 ;
 
 /*
-property
-  : IDENT S*
-  ;
 ruleset
   : selector [ ',' S* selector ]*
     '{' S* declaration? [ ';' S* declaration? ]* '}' S*
@@ -75,14 +88,18 @@ simple_selector
   ;
 */
 
-class:
-    '.' IDENT
+class
+    : '.' IDENT
+        {   print("class\n");  }
+;
+
+element_name
+    : IDENT
+    | '*'
+        {   print("");  }
 ;
 
 /*
-element_name
-  : IDENT | '*'
-  ;
 attrib
   : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S*
     [ IDENT | STRING ] S* ]? ']'
@@ -93,9 +110,13 @@ pseudo
 declaration
   : property ':' S* expr prio?
   ;
+*/
+
 prio
-  : IMPORTANT_SYM S*
-  ;
+    : IMPORTANT_SYM spaces
+;
+
+/*
 expr
   : term [ operator? term ]*
   ;
@@ -105,9 +126,11 @@ term
       TIME S* | FREQ S* ]
   | STRING S* | IDENT S* | URI S* | hexcolor | function
   ;
-function
-  : FUNCTION S* expr ')' S*
-  ;
+*/  
+/*
+function:
+    FUNCTION spaces expr ')' spaces
+;
 */
 
 /*
@@ -116,10 +139,14 @@ function
  * after the "#"; e.g., "#000" is OK, but "#abcd" is not.
  */
 
-hexcolor:
-    HASH S*
+hexcolor
+    : HASH spaces
 ;
 
+spaces
+    : S
+    | spaces S
+;
 
 %%
 
