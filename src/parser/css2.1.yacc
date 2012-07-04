@@ -1,3 +1,26 @@
+
+%{
+%}
+
+%token ANGLE
+%token BAD_STRING BAD_URI
+%token CDC CDO CHARSET_SYM
+%token DASHMATCH DIMENSION
+%token EMS EXS
+%token S STRING
+%token FREQ FUNCTION
+%token HASH
+%token IDENT INCLUDES IMPORT_SYM IMPORTANT_SYM
+%token LENGTH
+%token MEDIA_SYM
+%token NUMBER
+%token PAGE_SYM PERCENTAGE 
+%token TIME
+%token URI
+
+%%
+
+/*
 stylesheet
   : [ CHARSET_SYM STRING ';' ]?
     [S|CDO|CDC]* [ import [ CDO S* | CDC S* ]* ]*
@@ -78,11 +101,20 @@ term
 function
   : FUNCTION S* expr ')' S*
   ;
+*/
+
 /*
  * There is a constraint on the color that it must
  * have either 3 or 6 hex-digits (i.e., [0-9a-fA-F])
  * after the "#"; e.g., "#000" is OK, but "#abcd" is not.
  */
+
+/*
 hexcolor
   : HASH S*
   ;
+*/
+
+%%
+
+
