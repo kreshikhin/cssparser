@@ -6,27 +6,29 @@
 %start stylesheet
 
 %union{
-    int integer;
     char* string;
 }
 
-%token ANGLE
-%token BAD_STRING BAD_URI
+%token <string> ANGLE
+%token <string> BAD_STRING
+%token <string> BAD_URI
 %token CDC CDO CHARSET_SYM
 %token DASHMATCH DIMENSION
 %token EMS EXS
 %token S
 %token <string> STRING
-%token FREQ FUNCTION
+%token <string> FREQ
+%token FUNCTION
 %token HASH
 %token <string> IDENT
 %token INCLUDES IMPORT_SYM IMPORTANT_SYM
-%token LENGTH
+%token <string> LENGTH
 %token MEDIA_SYM
-%token NUMBER
-%token PAGE_SYM PERCENTAGE 
-%token TIME
-%token URI
+%token <string> NUMBER
+%token PAGE_SYM
+%token <string> PERCENTAGE 
+%token <string> TIME
+%token <string> URI
 
 %%
 
@@ -41,24 +43,19 @@ charset
     :
         {   printf("empty charset\n");  }
     | CHARSET_SYM STRING ';'
-        {   printf("charset : %s\n", $2);    }
+        {   printf("Detected charset : %s\n", $2);    }
 ;
 
 comments
     :
     | comments S
-        {   printf("t\n");  }
     | comments CDO
-        {   printf("html open comment combination\n");  }
     | comments CDC
-        {   printf("html close comment combination\n"); }
 ;
 
 import_block
     :
-        {   printf("empty imports\n");  }
     | import subcomments
-        {   printf("import \n");    }
 ;
 
 body
@@ -79,20 +76,14 @@ subcomments
 ;
 
 import // : IMPORT_SYM S* [STRING|URI] S* media_list? ';' S* ;
-    : IMPORT_SYM spaces import_uri spaces media_lists ';' spaces
-        {   printf("import body\n");    }
-;
-
-media_lists
-    :
-        {   printf("empty media lists\n");  }
-    | media_lists media_list
-        {   printf("media lists\n");  }
-;
-
-import_uri
-    : STRING
-    | URI
+    : IMPORT_SYM spaces STRING spaces media_list ';' spaces
+        {   printf("Detected import:\n", $3);    }
+    | IMPORT_SYM spaces URI spaces media_list ';' spaces
+        {   printf("Detected import:\n", $3);    }
+    | IMPORT_SYM spaces STRING spaces ';' spaces
+        {   printf("Detected import:\n", $3);    }
+    | IMPORT_SYM spaces URI spaces ';' spaces
+        {   printf("Detected import:\n", $3);    }
 ;
     
 media // : MEDIA_SYM S* media_list '{' S* ruleset* '}' S* ;
