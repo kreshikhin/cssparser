@@ -4,30 +4,21 @@
 import unittest
 import css2py.cssparser as cssparser
 
-class SpecialParser(cssparser.CSSParser):
-    def handle_selector(self, selector):
-        pass
-    
-    def handle_ruleset(self, ruleset):
-        pass
-    
+class SpecializedParser(cssparser.CSSParser):
     def handle_charset(self, charset):
-        pass
+        print("parsed charset:", charset)
     
-    def handle_declaration(self, declaration):
-        pass
         
 class TestCSSParser(unittest.TestCase):
     def setUp(self):
-        self.parser = cssparser.CSSParser()
-        self.css_data =
-        """
+        self.parser = SpecializedParser()
+        self.css_data = """
         body > div{
             color: red;
         }
         """
     def test_feed(self):
-        self.parser.feed(self.css_data)
+        self.parser.feed("asasddasdasd\n")
 
 if __name__ == '__main__':
    unittest.main()
