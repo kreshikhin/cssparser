@@ -1,15 +1,25 @@
 from distutils.core import setup, Extension
-from distutils.command.install_data import install_data
+from distutils.command.build import build
+import subprocess
+import os
 
-class post_install(install_data):
+class pre_build(build):
     def run(self):
-        # Call parent 
-        # install_data.run(self)
-        # Execute commands
-        print("Running")
+        try:
+            cwd = os.getcwd()
+            os.chdir("./src/cssparser/")
+            subprocess.call(["flex", "-d", "css.l"])
+            subprocess.call(["yacc", "-d", "css.y"])
+            os.chdir(cwd)
+        except:
+            print("Please install flex and yacc on your system before build the css2py package. ")
+            quit()
+        super().run()
 
 
-cssparser = Extension('css', sources = ['src/cssparser/css.c'])
+cssparser = Extension(
+    'css2py.cssparser',
+    sources = ['src/cssparser/css.c', 'src/cssparser/y.tab.c', 'src/cssparser/lex.yy.c'])
 
 setup(
     name='css2py',
@@ -20,12 +30,10 @@ setup(
     version='1.0',
     packages=[
         'css2py',
-        'css2py.cssparser',
     ],
     package_dir={
         'css2py'              : 'src',
-        'css2py.cssparser'    : 'src/cssparser'
     },
     ext_modules = [cssparser],
-    cmdclass={"install_data": post_install}
+    cmdclass={"build" : pre_build}
 )

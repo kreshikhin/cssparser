@@ -43,11 +43,11 @@ CSSParser_feed(
     cssparser_CSSParserObject* self,
     PyObject* args)
 {
+    yyparse();
     printf("called feed\n");
-    PyObject* data;
-    PyArg_UnpackTuple(args, "s", 1, 1, &data);
-    printf("py unicode object size: %i\n", PyUnicode_GetSize(data));
-    printf("py unicode object: %s\n", PyUnicode_AsUnicode(data));
+    char* data;
+    PyArg_ParseTuple(args, "s", &data);
+    printf("data: %s\n", data);
     PyObject_CallMethod((PyObject*)self, "handle_charset", "s", "UTF-8");
     Py_RETURN_NONE;
 }
@@ -133,24 +133,6 @@ PyInit_cssparser(void)
     Py_INCREF(CSSParserError);
     PyModule_AddObject(m, "error", CSSParserError);
     return m;
-}
-
-int
-main(int argc, char *argv[])
-{
-    /* Add a built-in module, before Py_Initialize */
-    PyImport_AppendInittab("cssparser", PyInit_cssparser);
-
-    /* Pass argv[0] to the Python interpreter */
-    Py_SetProgramName((wchar_t*)argv[0]);
-
-    /* Initialize the Python interpreter.  Required. */
-    Py_Initialize();
-
-    /* Optionally import the module; alternatively,
-       import can be deferred until the embedded script
-       imports it. */
-    PyImport_ImportModule("cssparser");
 }
 
 

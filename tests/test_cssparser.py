@@ -13,12 +13,13 @@ class TestCSSParser(unittest.TestCase):
     def setUp(self):
         self.parser = SpecializedParser()
         self.css_data = """
+        @charset "utf-8";
         body > div{
             color: red;
         }
         """
     def test_feed(self):
-        self.parser.feed("asasddasdasd\n")
+        self.parser.feed(self.css_data)
 
 if __name__ == '__main__':
    unittest.main()
