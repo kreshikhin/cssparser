@@ -1,25 +1,8 @@
-#include <Python.h>
+#include "css.h"
 
 static PyObject *CSSParserError;
 
-static PyObject *
-spam_system(PyObject *self, PyObject *args)
-{
-    const char *command;
-    int sts;
-
-    if (!PyArg_ParseTuple(args, "s", &command))
-        return NULL;
-    sts = system(command);
-    if (sts < 0) {
-        PyErr_SetString(CSSParserError, "System command failed");
-        return NULL;
-    }
-    return PyLong_FromLong(sts);
-}
-
 static PyMethodDef CSSParserMethods[] = {
-    {"system",  spam_system, METH_VARARGS, "Execute a shell command."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -32,23 +15,29 @@ static struct PyModuleDef CSSParserModule = {
    CSSParserMethods
 };
 
-/// define new type for CSSParser
-typedef struct {
-    PyObject_HEAD
-    /* Type-specific fields go here. */
-} cssparser_CSSParserObject;
+extern cssparser_CSSParserObject* global_self = NULL;
 
 static PyObject*
 CSSParser_feed(
     cssparser_CSSParserObject* self,
     PyObject* args)
 {
-    yyparse();
-    printf("called feed\n");
+    // TODO: add synchronization
+    extern FILE *yyin;
+    extern FILE *yyout;
+    extern int yy_flex_debug;
+    yy_flex_debug = 0;
+    yyout = NULL;
+    
+    global_self = self;
     char* data;
+    int i;
+    
     PyArg_ParseTuple(args, "s", &data);
-    printf("data: %s\n", data);
-    PyObject_CallMethod((PyObject*)self, "handle_charset", "s", "UTF-8");
+    yyin = fmemopen(data, strlen(data) + 1, "r");
+    yyparse();
+    fclose(yyin);
+    yyin = NULL;
     Py_RETURN_NONE;
 }
 
@@ -73,44 +62,44 @@ static PyMethodDef CSSParser_methods[] = {
 
 static PyTypeObject cssparser_CSSParserType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cssparser.CSSParser",             /* tp_name */
-    sizeof(cssparser_CSSParserObject), /* tp_basicsize */
-    0,                         /* tp_itemsize */
-    0,                         /* tp_dealloc */
-    0,                         /* tp_print */
-    0,                         /* tp_getattr */
-    0,                         /* tp_setattr */
-    0,                         /* tp_reserved */
-    0,                         /* tp_repr */
-    0,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
-    0,                         /* tp_as_mapping */
-    0,                         /* tp_hash  */
-    0,                         /* tp_call */
-    0,                         /* tp_str */
-    0,                         /* tp_getattro */
-    0,                         /* tp_setattro */
-    0,                         /* tp_as_buffer */
+    "cssparser.CSSParser",      /* tp_name */
+    sizeof(cssparser_CSSParserObject),  /* tp_basicsize */
+    0,                          /* tp_itemsize */
+    0,                          /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_reserved */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash  */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
-        Py_TPFLAGS_BASETYPE,        /* tp_flags */
-    "CSSParser object",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    CSSParser_methods,             /* tp_methods */
-    0,             /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,      /* tp_init */
-    0,                         /* tp_alloc */
-    0,                 /* tp_new */
+        Py_TPFLAGS_BASETYPE,    /* tp_flags */
+    "CSSParser object",         /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    CSSParser_methods,          /* tp_methods */
+    0,                          /* tp_members */
+    0,                          /* tp_getset */
+    0,                          /* tp_base */
+    0,                          /* tp_dict */
+    0,                          /* tp_descr_get */
+    0,                          /* tp_descr_set */
+    0,                          /* tp_dictoffset */
+    0,                          /* tp_init */
+    0,                          /* tp_alloc */
+    0,                          /* tp_new */
 };
 
 PyMODINIT_FUNC

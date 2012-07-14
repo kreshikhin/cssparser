@@ -1,6 +1,7 @@
 
 %{
 #include <stdio.h>
+#include "css.h"
 %}
 
 %start stylesheet
@@ -36,14 +37,14 @@ stylesheet // : [ CHARSET_SYM STRING ';' ]?
            //   [S|CDO|CDC]* [ import [ CDO S* | CDC S* ]* ]*
            //   [ [ ruleset | media | page ] [ CDO S* | CDC S* ]* ]* ;
     : charset comments import_block body
-        {   printf("stylesheet\n");    }
 ;
 
 charset
     :
-        {   printf("empty charset\n");  }
     | CHARSET_SYM STRING ';'
-        {   printf("Detected charset : %s\n", $2);    }
+        {
+            PyObject_CallMethod((PyObject*)global_self, "handle_charset", "s", $2);
+        }
 ;
 
 comments
@@ -60,13 +61,9 @@ import_block
 
 body
     :
-        {   printf("empty body\n");  }
     | body ruleset subcomments
-        {   printf("body rulesets\n");  }
     | body media subcomments
-        {   printf("body media\n");   }
     | body page subcomments
-        {   printf("body pagr\n");  }
 ;
 
 subcomments
@@ -77,25 +74,18 @@ subcomments
 
 import // : IMPORT_SYM S* [STRING|URI] S* media_list? ';' S* ;
     : IMPORT_SYM spaces STRING spaces media_list ';' spaces
-        {   printf("Detected import:\n", $3);    }
     | IMPORT_SYM spaces URI spaces media_list ';' spaces
-        {   printf("Detected import:\n", $3);    }
     | IMPORT_SYM spaces STRING spaces ';' spaces
-        {   printf("Detected import:\n", $3);    }
     | IMPORT_SYM spaces URI spaces ';' spaces
-        {   printf("Detected import:\n", $3);    }
 ;
     
 media // : MEDIA_SYM S* media_list '{' S* ruleset* '}' S* ;
     : MEDIA_SYM spaces media_list '{' spaces rulesets '}' spaces
-        {   printf("media\n");  }
 ;
 
 rulesets
     :
-        {   printf("empty rulesets\n"); }
     | rulesets ruleset
-        {   printf("rulesets\n");   }
 ;
 
 media_list // : medium [ COMMA S* medium]* ;
@@ -141,52 +131,36 @@ unary_operator // : '-' | '+' ;
 
 property // : IDENT S* ;
     : IDENT spaces
-        {   printf("property\n");   }
 ;
 
 ruleset // : selector [ ',' S* selector ]* '{' S* declaration? [ ';' S* declaration? ]* '}' S* ;
     : selectors '{' spaces declarations '}' spaces
-        {   printf("ruleset\n");    }
 ;
 
 selectors
     : selector
-        {   printf("selectors1\n");    }
     | selectors ',' spaces selector
-        {   printf("selectors2\n");    }
 ;
 
 declarations
     :
-        {   printf("empty declarations\n");  }
     | declaration
-        {   printf("declarations1\n");   }
     | declarations ';' spaces declaration
-        {   printf("declarations2\n");   }
     | declarations ';' spaces
-        {   printf("declarations3\n");   }
 ;
 
 selector // : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]? ;
     : simple_selector combinator selector
-        {   printf("selector1\n");    }
     | simple_selector S spaces combinator selector
-        {   printf("selector2\n");    }
     | simple_selector S spaces selector
-        {   printf("selector3\n");    }
     | simple_selector S spaces
-        {   printf("selector4\n");    }
     | simple_selector
-        {   printf("selector5\n");    }
 ;
 
 simple_selector // : element_name [ HASH | class | attrib | pseudo ]* | [ HASH | class | attrib | pseudo ]+ ;
     : element_name
-        {   printf("simple selector2\n");    }
     | selector_prefix
-        {   printf("simple selector with right part\n");    }
     | simple_selector selector_prefix
-        {   printf("simple selector with right part without element name\n");    }
 ;
 
 selector_prefix
@@ -202,7 +176,6 @@ class // : '.' IDENT ;
 
 element_name // : IDENT | '*' ;
     : IDENT
-        {   printf("ident :%s\n", $1);  }
     | '*'
 ;
 
@@ -242,9 +215,7 @@ pseudo_block_function_ident
 
 declaration // : property ':' S* expr prio? ;
     : property ':' spaces expr prio
-    {   printf("declaration1\n");   }
     | property ':' spaces expr
-    {   printf("declaration2\n");   }
 ;
 
 prio // : IMPORTANT_SYM S* ;
@@ -253,11 +224,8 @@ prio // : IMPORTANT_SYM S* ;
 
 expr //: term [ operator? term ]*;
     : term
-    {   printf("expr1\n");   }
     | expr operator term
-    {   printf("expr2\n");   }
     | expr term
-    {   printf("exp3\n");   }
 ;
 
 term // : unary_operator?
@@ -298,13 +266,12 @@ hexcolor // : HASH S* ;
 
 spaces
     :
-    {   printf("empty space\n");   }
     | spaces S
-    {   printf("many spaces\n");    }
 ;
 
 %%
 
+/* main for manual testing */
 main(int argc, char** argv)
 {
     const char* usage = "usage: %s [infile [outfile]]\n";
@@ -351,6 +318,6 @@ main(int argc, char** argv)
 
 yyerror(char *s)
 {
-    printf("%s\n", s);
+    //printf("%s\n", s);
 }
 
