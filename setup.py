@@ -8,8 +8,12 @@ class pre_build(build):
         try:
             cwd = os.getcwd()
             os.chdir("./src/cssparser/")
+            print("================ FLEX =====================")
             subprocess.call(["flex", "-d", "css.l"])
+            print("\n")
+            print("================ YACC =====================")
             subprocess.call(["yacc", "-d", "css.y"])
+            print("\n")
             os.chdir(cwd)
         except:
             print("Please install flex and yacc on your system before build the css2py package. ")

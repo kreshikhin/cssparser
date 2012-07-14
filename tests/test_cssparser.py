@@ -8,11 +8,25 @@ class SpecializedParser(cssparser.CSSParser):
     def handle_charset(self, charset):
         print("### parsed charset:", charset)
     
+    def handle_type_selector(self, type_name):
+        print("### parsed type selector", type_name)
+    
+    def handle_universal_selector(self):
+        print("### parsed universal selector")
+    
+    def handle_combinator(self, combinator):
+        print("### parsed combinator", combinator)
+        
+    def handle_class_selector(self, class_name):
+        print("### parsed class selector:", class_name)
+
+    def handle_id_selector(self, element_id):
+        print("### parsed id selector:", element_id)
         
 class TestCSSParser(unittest.TestCase):
     def setUp(self):
         self.parser = SpecializedParser()
-        self.css_data = """@charset "urf-8";
+        self.css_data = """@charset "utf-8";
 .sportid-logo
 {
     background-color: white;
@@ -54,9 +68,17 @@ body a
     text-decoration: none;
     border: 0px;
 }
-body a:focus
+wqeqweqwe a:focus
 {
     outline: 0px;
+}
+
+*{
+    color:red;
+}
+
+:focus{
+    font-size: 12pt;
 }
 
 body header
@@ -204,13 +226,13 @@ body section .text
     line-height: 1.1;
 }
 
-body footer
+body > footer
 {
     margin: -10px;
     height: 200px;
 }
 
-body footer
+body + footer
 {
     height: 100%;
     color: #ABD;
@@ -263,10 +285,16 @@ body footer .industry
     background-color: #EEE;
 }
 
+#pretty_id
+{
+    color: red;
+}
+
         """
 
     def test_feed(self):
         self.parser.feed(self.css_data)
+        #print("bye!!!")
 
 if __name__ == '__main__':
    unittest.main()

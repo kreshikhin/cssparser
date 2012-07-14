@@ -20,7 +20,7 @@
 %token <string> STRING
 %token <string> FREQ
 %token FUNCTION
-%token HASH
+%token <string> HASH
 %token <string> IDENT
 %token INCLUDES IMPORT_SYM IMPORTANT_SYM
 %token <string> LENGTH
@@ -30,6 +30,10 @@
 %token <string> PERCENTAGE 
 %token <string> TIME
 %token <string> URI
+
+%type <string> type_selector
+%type <string> id_selector
+%type <string> class_selector
 
 %%
 
@@ -42,9 +46,9 @@ stylesheet // : [ CHARSET_SYM STRING ';' ]?
 charset
     :
     | CHARSET_SYM STRING ';'
-        {
-            PyObject_CallMethod((PyObject*)global_self, "handle_charset", "s", $2);
-        }
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_charset", "s", $2);
+    }
 ;
 
 comments
@@ -121,7 +125,13 @@ operator // : '/' S* | ',' S* ;
 
 combinator // : '+' S* | '>' S* ;
     : '+' spaces
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_combinator", "s", "+");
+    }
     | '>' spaces
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_combinator", "s", ">");
+    }
 ;
 
 unary_operator // : '-' | '+' ;
@@ -134,52 +144,106 @@ property // : IDENT S* ;
 ;
 
 ruleset // : selector [ ',' S* selector ]* '{' S* declaration? [ ';' S* declaration? ]* '}' S* ;
-    : selectors '{' spaces declarations '}' spaces
+    : selector_list '{' spaces declarations '}' spaces
+    | selector_list '{' spaces '}' spaces
 ;
 
-selectors
-    : selector
-    | selectors ',' spaces selector
+selector_list
+    : complex_selector
+    | selector_list ',' spaces complex_selector
 ;
 
 declarations
-    :
-    | declaration
+    : declaration
     | declarations ';' spaces declaration
     | declarations ';' spaces
 ;
 
-selector // : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]? ;
-    : simple_selector combinator selector
-    | simple_selector S spaces combinator selector
-    | simple_selector S spaces selector
-    | simple_selector S spaces
-    | simple_selector
+complex_selector // : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]? ;
+    : compound_selector
+    | complex_selector combinator compound_selector
+    | complex_selector S compound_selector 
+    | complex_selector S
+        /* for space symbols skipping */
 ;
 
-simple_selector // : element_name [ HASH | class | attrib | pseudo ]* | [ HASH | class | attrib | pseudo ]+ ;
-    : element_name
-    | selector_prefix
-    | simple_selector selector_prefix
+compound_selector // : element_name [ HASH | class | attrib | pseudo ]* | [ HASH | class | attrib | pseudo ]+ ;
+    : type_selector
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_type_selector", "s", $1);
+    }
+    | universal_selector type_selector
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_type_selector", "s", $2);
+    }
+    | universal_selector
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
+    }
+    | attribute_selector
+    {
+        //PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
+        //PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "", $1);
+    }
+    | class_selector
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
+        PyObject_CallMethod((PyObject*)global_self, "handle_class_selector", "s", $1);
+    }
+    | id_selector
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
+        PyObject_CallMethod((PyObject*)global_self, "handle_id_selector", "s", $1);
+    }
+    | pseudo_class_selector
+    {
+        //PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
+        //PyObject_CallMethod((PyObject*)global_self, "handle_pseudo_class_selector", "", $1);
+    }
+    | compound_selector attribute_selector
+    {
+        //PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
+    }
+    | compound_selector class_selector
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
+    }
+    | compound_selector id_selector
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
+    }
+    | compound_selector pseudo_class_selector
+    {
+        //PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
+    }
 ;
 
-selector_prefix
+id_selector
     : HASH
-    | class
-    | attrib
-    | pseudo
+    {
+        $$ = $1;
+    }
 ;
 
-class // : '.' IDENT ;
+class_selector // : '.' IDENT ;
     : '.' IDENT
+    {
+        $$ = $2;
+    }
 ;
 
-element_name // : IDENT | '*' ;
+type_selector // : IDENT | '*' ;
     : IDENT
-    | '*'
+    {
+        $$ = $1;
+    }
 ;
 
-attrib // : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S* [ IDENT | STRING ] S* ]? ']';
+universal_selector
+    : '*'
+;
+
+attribute_selector // : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S* [ IDENT | STRING ] S* ]? ']';
     : '[' spaces IDENT spaces attrib_block ']'
 ;
 
@@ -199,7 +263,7 @@ attrib_block_string
     | STRING
 ;
 
-pseudo // : ':' [ IDENT | FUNCTION S* [IDENT S*]? ')' ] ;
+pseudo_class_selector // : ':' [ IDENT | FUNCTION S* [IDENT S*]? ')' ] ;
     : ':' pseudo_block
 ;
 

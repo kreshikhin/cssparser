@@ -31,8 +31,6 @@ CSSParser_feed(
     
     global_self = self;
     char* data;
-    int i;
-    
     PyArg_ParseTuple(args, "s", &data);
     yyin = fmemopen(data, strlen(data) + 1, "r");
     yyparse();
@@ -41,21 +39,9 @@ CSSParser_feed(
     Py_RETURN_NONE;
 }
 
-static PyObject*
-CSSParser_handle_charset(
-    cssparser_CSSParserObject* self,
-    PyObject* args)
-{
-    Py_RETURN_NONE;
-}
-
-
 static PyMethodDef CSSParser_methods[] = {
     {"feed", (PyCFunction)CSSParser_feed, METH_VARARGS,
      "Feed the css data"
-    },
-    {"handle_charset", (PyCFunction)CSSParser_handle_charset, METH_VARARGS,
-     "Callback method"
     },
     {NULL}  /* Sentinel */
 };
