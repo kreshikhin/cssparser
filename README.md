@@ -1,4 +1,4 @@
-css2py
+Python CSSParser
 ======
 
-Experimental python css-based engine to styling custom xml files.
+Experimental Python module based on w3.org lex/yacc grammar wich has HTMLParser-like interface.
