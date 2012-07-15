@@ -6,22 +6,32 @@ import css2py.cssparser as cssparser
 
 class SpecializedParser(cssparser.CSSParser):
     def handle_charset(self, charset):
-        print("### parsed charset:", charset)
-    
-    def handle_type_selector(self, type_name):
-        print("### parsed type selector", type_name)
-    
-    def handle_universal_selector(self):
-        print("### parsed universal selector")
+        print("charset:", charset)
     
     def handle_combinator(self, combinator):
-        print("### parsed combinator", combinator)
+        print("combinator:", combinator)
         
+    # simple selectors:
+    
+    def handle_type_selector(self, type_name):
+        print("type selector:", type_name)
+    
+    def handle_universal_selector(self):
+        print("universal selector:")
+    
     def handle_class_selector(self, class_name):
-        print("### parsed class selector:", class_name)
+        print("class selector:", class_name)
 
     def handle_id_selector(self, element_id):
-        print("### parsed id selector:", element_id)
+        print("id selector:", element_id)
+    
+    def handle_attribute_selector(self, attr, eq, value):
+        print("attribute selector:", attr, eq, value)
+    
+    # declarations
+    
+    def handle_declaration(self, key, value):
+        print("declaration:", key, value)
         
 class TestCSSParser(unittest.TestCase):
     def setUp(self):
@@ -57,7 +67,7 @@ class TestCSSParser(unittest.TestCase):
     display: none;
 }
 
-body
+body[id="attrid"]
 {
     margin: 0px;
     background-color: #EEE;
@@ -73,7 +83,9 @@ wqeqweqwe a:focus
     outline: 0px;
 }
 
-*{
+
+*div
+{
     color:red;
 }
 
@@ -277,24 +289,22 @@ body footer .logo
 
 body footer .square
 {
-    border-color: #CCC;
+    border-color2: #CCC;
 }
 
-body footer .industry
+#bbbody footer .industry
 {
-    background-color: #EEE;
 }
 
-#pretty_id
+body footer .squareqweqeqweqe
 {
-    color: red;
 }
 
         """
 
     def test_feed(self):
         self.parser.feed(self.css_data)
-        #print("bye!!!")
+        print("bye!!!")
 
 if __name__ == '__main__':
    unittest.main()

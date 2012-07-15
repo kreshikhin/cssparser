@@ -14,7 +14,8 @@
 %token <string> BAD_STRING
 %token <string> BAD_URI
 %token CDC CDO CHARSET_SYM
-%token DASHMATCH DIMENSION
+%token <string> DASHMATCH
+%token DIMENSION
 %token EMS EXS
 %token S
 %token <string> STRING
@@ -22,7 +23,8 @@
 %token FUNCTION
 %token <string> HASH
 %token <string> IDENT
-%token INCLUDES IMPORT_SYM IMPORTANT_SYM
+%token <string> INCLUDES
+%token IMPORT_SYM IMPORTANT_SYM
 %token <string> LENGTH
 %token MEDIA_SYM
 %token <string> NUMBER
@@ -34,6 +36,13 @@
 %type <string> type_selector
 %type <string> id_selector
 %type <string> class_selector
+
+%type <string> attrib_eq
+%type <string> attrib_value
+
+%type <string> term
+%type <string> property
+%type <string> expr
 
 %%
 
@@ -141,6 +150,9 @@ unary_operator // : '-' | '+' ;
 
 property // : IDENT S* ;
     : IDENT spaces
+    {
+        $$ = $1;
+    }
 ;
 
 ruleset // : selector [ ',' S* selector ]* '{' S* declaration? [ ';' S* declaration? ]* '}' S* ;
@@ -150,13 +162,8 @@ ruleset // : selector [ ',' S* selector ]* '{' S* declaration? [ ';' S* declarat
 
 selector_list
     : complex_selector
+    | universal_selector
     | selector_list ',' spaces complex_selector
-;
-
-declarations
-    : declaration
-    | declarations ';' spaces declaration
-    | declarations ';' spaces
 ;
 
 complex_selector // : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]? ;
@@ -167,100 +174,77 @@ complex_selector // : simple_selector [ combinator selector | S+ [ combinator? s
         /* for space symbols skipping */
 ;
 
+universal_selector
+    :
+    | '*'
+    {
+        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
+    }
+;
+
 compound_selector // : element_name [ HASH | class | attrib | pseudo ]* | [ HASH | class | attrib | pseudo ]+ ;
-    : type_selector
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_type_selector", "s", $1);
-    }
-    | universal_selector type_selector
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_type_selector", "s", $2);
-    }
-    | universal_selector
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
-    }
-    | attribute_selector
-    {
-        //PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
-        //PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "", $1);
-    }
+    : '*' type_selector
+    | type_selector
+    | '*' simple_selector
+    | simple_selector
+    | compound_selector simple_selector
+;
+
+simple_selector
+    : attribute_selector
     | class_selector
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
-        PyObject_CallMethod((PyObject*)global_self, "handle_class_selector", "s", $1);
-    }
     | id_selector
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
-        PyObject_CallMethod((PyObject*)global_self, "handle_id_selector", "s", $1);
-    }
     | pseudo_class_selector
-    {
-        //PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
-        //PyObject_CallMethod((PyObject*)global_self, "handle_pseudo_class_selector", "", $1);
-    }
-    | compound_selector attribute_selector
-    {
-        //PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
-    }
-    | compound_selector class_selector
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
-    }
-    | compound_selector id_selector
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
-    }
-    | compound_selector pseudo_class_selector
-    {
-        //PyObject_CallMethod((PyObject*)global_self, "handle_attribute_selector", "s", $2);
-    }
 ;
 
 id_selector
     : HASH
     {
-        $$ = $1;
+        PyObject_CallMethod((PyObject*)global_self, "handle_id_selector", "s", $1);
     }
 ;
 
 class_selector // : '.' IDENT ;
     : '.' IDENT
     {
-        $$ = $2;
+        PyObject_CallMethod((PyObject*)global_self, "handle_class_selector", "s", $2);
     }
 ;
 
 type_selector // : IDENT | '*' ;
     : IDENT
     {
-        $$ = $1;
+        PyObject_CallMethod((PyObject*)global_self, "handle_type_selector", "s", $1);
     }
 ;
 
-universal_selector
-    : '*'
-;
-
 attribute_selector // : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S* [ IDENT | STRING ] S* ]? ']';
-    : '[' spaces IDENT spaces attrib_block ']'
+    : '[' spaces IDENT spaces ']'
+    {
+        PyObject_CallMethod((PyObject*)global_self,
+            "handle_attribute_selector", "sss", $3, NULL, NULL);
+    }
+    | '[' spaces IDENT spaces attrib_eq spaces attrib_value spaces ']'
+    {
+        PyObject_CallMethod((PyObject*)global_self,
+            "handle_attribute_selector", "sss", $3, $5, $7);
+    }
 ;
 
-attrib_block
-    :
-    | attrib_block_eq spaces attrib_block_string spaces
-;
-
-attrib_block_eq
+attrib_eq
     : '='
+    {   $$ = "=";    }
     | INCLUDES
+    {   $$ = $1;    }
     | DASHMATCH
+    {   $$ = $1;    }
 ;
 
-attrib_block_string
+attrib_value
     : IDENT
+    {   $$ = $1;    }
     | STRING
+    {   $$ = $1;    }
 ;
 
 pseudo_class_selector // : ':' [ IDENT | FUNCTION S* [IDENT S*]? ')' ] ;
@@ -277,9 +261,23 @@ pseudo_block_function_ident
     | IDENT spaces
 ;
 
+declarations
+    : declaration
+    | declarations ';' spaces declaration
+    | declarations ';' spaces
+;
+
 declaration // : property ':' S* expr prio? ;
     : property ':' spaces expr prio
+    {
+        PyObject_CallMethod((PyObject*)global_self,
+            "handle_declaration", "ss", $1, $4);
+    }
     | property ':' spaces expr
+    {
+        PyObject_CallMethod((PyObject*)global_self,
+            "handle_declaration", "ss", $1, $4);
+    }
 ;
 
 prio // : IMPORTANT_SYM S* ;
@@ -288,6 +286,9 @@ prio // : IMPORTANT_SYM S* ;
 
 expr //: term [ operator? term ]*;
     : term
+    {
+        $$ = $1;
+    }
     | expr operator term
     | expr term
 ;
@@ -298,8 +299,17 @@ term // : unary_operator?
     : unary_operator term_numeral spaces
     | term_numeral spaces
     | STRING spaces
+    {
+        $$ = $1;
+    }
     | IDENT spaces
+    {
+        $$ = $1;
+    }
     | URI spaces
+    {
+        $$ = $1;
+    }
     | hexcolor
     | function
 ;

@@ -74,7 +74,8 @@ Z		z|\\0{0,4}(5a|7a)(\r\n|[ \t\r\n\f])?|\\z
 {ident}	                { yylval.string = strdup(yytext);
                           return IDENT;}
 
-"#"{name}               {return HASH;}
+"#"{name}               { yylval.string = strdup(yytext);
+                          return HASH;}
 
 @{I}{M}{P}{O}{R}{T}     {return IMPORT_SYM;}
 @{P}{A}{G}{E}           {return PAGE_SYM;}
