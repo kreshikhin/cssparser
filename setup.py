@@ -16,27 +16,27 @@ class pre_build(build):
             print("\n")
             os.chdir(cwd)
         except:
-            print("Please install flex and yacc on your system before build the css2py package. ")
+            print("Please install flex and yacc on your system before build the cssparser package. ")
             quit()
         super().run()
 
 
 cssparser = Extension(
-    'css2py.cssparser',
-    sources = ['src/cssparser/css.c', 'src/cssparser/y.tab.c', 'src/cssparser/lex.yy.c'])
+    'cssparser',
+    sources = ['src/cssparser.c', 'src/y.tab.c', 'src/lex.yy.c'])
 
 setup(
     name='css2py',
-    #author='none',
-    #author_email='none',
+    author='pinocchio964',
+    author_email='pelou85@gmail.com',
     url= 'https://github.com/pinocchio964/css2py',
-    description= 'Experimental python css-based engine to styling custom xml files.',
+    description= 'Experimental python CSS parser.',
     version='1.0',
     packages=[
-        'css2py',
+        'cssparser',
     ],
     package_dir={
-        'css2py'              : 'src',
+        'cssparser'              : 'src',
     },
     ext_modules = [cssparser],
     cmdclass={"build" : pre_build}
