@@ -1,7 +1,7 @@
 
 %{
 #include <stdio.h>
-#include "css.h"
+#include "cssparser.h"
 %}
 
 %start stylesheet

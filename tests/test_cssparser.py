@@ -2,7 +2,7 @@
 # coding=utf-8
 
 import unittest
-import css2py.cssparser as cssparser
+import cssparser
 
 class SpecializedParser(cssparser.CSSParser):
     def handle_charset(self, charset):

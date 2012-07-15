@@ -1,4 +1,4 @@
-#include "css.h"
+#include "cssparser.h"
 
 static PyObject *CSSParserError;
 

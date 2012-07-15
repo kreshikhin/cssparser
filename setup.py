@@ -7,7 +7,7 @@ class pre_build(build):
     def run(self):
         try:
             cwd = os.getcwd()
-            os.chdir("./src/cssparser/")
+            os.chdir("./src/")
             print("================ FLEX =====================")
             subprocess.call(["flex", "-d", "css.l"])
             print("\n")
