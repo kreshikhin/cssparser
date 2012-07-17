@@ -56,7 +56,7 @@ charset
     :
     | CHARSET_SYM STRING ';'
     {
-        PyObject_CallMethod((PyObject*)global_self, "handle_charset", "s", $2);
+        PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_CHARSET, "s", $2);
     }
 ;
 
@@ -135,11 +135,11 @@ operator // : '/' S* | ',' S* ;
 combinator // : '+' S* | '>' S* ;
     : '+' spaces
     {
-        PyObject_CallMethod((PyObject*)global_self, "handle_combinator", "s", "+");
+        PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_COMBINATOR, "s", "+");
     }
     | '>' spaces
     {
-        PyObject_CallMethod((PyObject*)global_self, "handle_combinator", "s", ">");
+        PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_COMBINATOR, "s", ">");
     }
 ;
 
@@ -164,6 +164,7 @@ selector_list
     : complex_selector
     | universal_selector
     | selector_list ',' spaces complex_selector
+    | selector_list ',' spaces universal_selector
 ;
 
 complex_selector // : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]? ;
@@ -177,9 +178,6 @@ complex_selector // : simple_selector [ combinator selector | S+ [ combinator? s
 universal_selector
     :
     | '*'
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_universal_selector", "", NULL);
-    }
 ;
 
 compound_selector // : element_name [ HASH | class | attrib | pseudo ]* | [ HASH | class | attrib | pseudo ]+ ;
@@ -199,36 +197,24 @@ simple_selector
 
 id_selector
     : HASH
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_id_selector", "s", $1);
-    }
+    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ss", "id", $1); }
 ;
 
 class_selector // : '.' IDENT ;
     : '.' IDENT
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_class_selector", "s", $2);
-    }
+    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ss", "class", $2); }
 ;
 
 type_selector // : IDENT | '*' ;
     : IDENT
-    {
-        PyObject_CallMethod((PyObject*)global_self, "handle_type_selector", "s", $1);
-    }
+    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ss", "type", $1); }
 ;
 
 attribute_selector // : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S* [ IDENT | STRING ] S* ]? ']';
     : '[' spaces IDENT spaces ']'
-    {
-        PyObject_CallMethod((PyObject*)global_self,
-            "handle_attribute_selector", "sss", $3, NULL, NULL);
-    }
+    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ssss", "attribute", $3, NULL, NULL); }
     | '[' spaces IDENT spaces attrib_eq spaces attrib_value spaces ']'
-    {
-        PyObject_CallMethod((PyObject*)global_self,
-            "handle_attribute_selector", "sss", $3, $5, $7);
-    }
+    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ssss", "attribute", $3, $5, $7); }
 ;
 
 attrib_eq
@@ -269,15 +255,9 @@ declarations
 
 declaration // : property ':' S* expr prio? ;
     : property ':' spaces expr prio
-    {
-        PyObject_CallMethod((PyObject*)global_self,
-            "handle_declaration", "ss", $1, $4);
-    }
+    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_DECLARATION, "ss", $1, $4); }
     | property ':' spaces expr
-    {
-        PyObject_CallMethod((PyObject*)global_self,
-            "handle_declaration", "ss", $1, $4);
-    }
+    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_DECLARATION, "ss", $1, $4); }
 ;
 
 prio // : IMPORTANT_SYM S* ;

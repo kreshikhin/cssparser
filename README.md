@@ -22,45 +22,65 @@ Example CSS Parser Application
 As a basic example, below is a simple CSS parser that uses the CSSParser class to print out start tags, end tags, and data as they are encountered:
 
 ```python
-from cssparser import CSSParser
+fimport cssparser
 
-class MyCSSParser(CSSParser):
+class MyCSSParser(cssparser.CSSParser):
     def handle_charset(self, charset):
-        print("Encountered a charset: ", charset)
-
-    def handle_universal_selector(self):
-        print("universal a selector:")
+        print("Encountered a charset:", charset)
     
-    def handle_complex_selector(self):
-        print("Encountered a complex selector")
+    def handle_combinator(self, combinator):
+        print("Encountered a combinator:", combinator)
+    
+    def handle_selector(self, selector_type, selector_name = '', selector_attribute = '', attribute_value = ''):
+        print("Encountered a selector:", selector_type, selector_name, selector_attribute, attribute_value)
+    
+    def handle_separator(self):
+        print("Encountered a separator")
+    
+    def handle_declaration(self, property_name, value):
+        print("Encountered a declaration:", property_name, value)
         
-    def handle_compound_selector(self):
-        print("Encountered a compound selector")
+parser = MyCSSParser()
+parser.feed(
+"""@charset "utf-8";
 
-    def handle_simple_selector(self, selector_type = '', element = '', predicate = ''):
-        print("Encountered a simple selector: ", selector_type, element, predicate)
-    
-    def handle_declaration(self):
-        print("Encountered a declaration")
-    
-    def handle_property(self, name):
-        print("Encountred a property", name)
-        
-parser = MyCSSParser(strict=False)
-parser.feed('charset "utf-8";\n'
-            'div{\n'
-            '   color: red;'
-            '}\n')
+div.logo
+{
+    background-color: white;
+    color: #265581;
+    position: relative;
+    top: 2px;
+    margin: 3px;
+    margin-top: 10px;
+    padding: 2px;
+    border: 1px solid #265581; 
+    border-radius: 3px;
+    font-family: 'Arial', bold;
+    font-size: 12pt;
+}
+
+""")
+
+parser.close()
 ```
 
 The output will then be:
 
 ```
-Encountered a charset: utf-8
-Encountered a complex selector
-Encountered a compuond selector
-Encountered a simple selector: type div
-Encountered a declaration: color
+Encountered a charset: "utf-8"
+Encountered a selector: type div  
+Encountered a selector: class logo  
+Encountered a declaration: background-color white
+Encountered a declaration: color #265581
+Encountered a declaration: position relative
+Encountered a declaration: top top
+Encountered a declaration: margin margin
+Encountered a declaration: margin-top margin-top
+Encountered a declaration: padding padding
+Encountered a declaration: border border
+Encountered a declaration: border-radius border-radius
+Encountered a declaration: font-family 'Arial'
+Encountered a declaration: font-size font-size
 ```
 
 CSSParser Methods
@@ -86,27 +106,21 @@ CSSParser.**handle_charset**(*self, charset*)
         
 This method is called to handle the charset.
 
-CSSParser.**handle_ruleset**(*self*):
-
-This method is called to handle the start of ruleset.
-
-CSSParser.**handle_complex_selector**(*self*):
-    
-This method is called to handle the start of ruleset selectors.
-
 CSSParser.**handle_combinator**(*self*):
     
-This method is called to handle the combinator of a complex selector.
+This method is called to handle the combinator wich joins compound selectors to complex selector.
+
+CSSParser.**handle_separator**(*self*):
+    
+This method is called to handle the start of ruleset selectors.
             
-CSSParser.**handle_compound_selector**(*self*):
+CSSParser.**handle_selector**(*self, selector_type = '', name = '', predicate = '', value = ''*):
     
-This method is called to handle the start of compound selector.
+This method is called to handle the simple selector as part of a compound selector.
 
-CSSParser.**handle_simple_selector**(*self, selector_type = '', element = '', predicate = ''*):
+CSSParser.**handle_declaration**(*self, property_name = ''*):
     
-This method is called to handle the simple selector of a compound selector.
-
-.............
+This method is called to handle the declaration property.
 
 
 [1]: http://www.w3.org/TR/CSS21/grammar.html

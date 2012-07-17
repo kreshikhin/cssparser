@@ -39,10 +39,20 @@ CSSParser_feed(
     Py_RETURN_NONE;
 }
 
+static PyObject* CSSParser_default_handler(cssparser_CSSParserObject* self, PyObject* args)
+{
+    Py_RETURN_NONE;
+};
+
 static PyMethodDef CSSParser_methods[] = {
-    {"feed", (PyCFunction)CSSParser_feed, METH_VARARGS,
-     "Feed the css data"
-    },
+    {"feed", (PyCFunction)CSSParser_feed, METH_VARARGS, "Feed the css data"},
+    {"close", (PyCFunction)CSSParser_default_handler, METH_VARARGS, "Close"},
+    {"reset", (PyCFunction)CSSParser_default_handler, METH_VARARGS, "Reset"},
+    {CSSPARSER_HANDLE_CHARSET, (PyCFunction)CSSParser_default_handler, METH_VARARGS, "Default handle"},
+    {CSSPARSER_HANDLE_SELECTOR, (PyCFunction)CSSParser_default_handler, METH_VARARGS, "Default handle"},
+    {CSSPARSER_HANDLE_COMBINATOR, (PyCFunction)CSSParser_default_handler, METH_VARARGS, "Default handle"},
+    {CSSPARSER_HANDLE_SELECTOR_SEPARATOR, (PyCFunction)CSSParser_default_handler, METH_VARARGS, "Default handle"},
+    {CSSPARSER_HANDLE_DECLARATION, (PyCFunction)CSSParser_default_handler, METH_VARARGS, "Default handle"},
     {NULL}  /* Sentinel */
 };
 

@@ -1,3 +1,4 @@
+#!python3
 from distutils.core import setup, Extension
 from distutils.command.build import build
 import subprocess
