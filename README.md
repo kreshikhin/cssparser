@@ -82,27 +82,27 @@ CSSParser.reset()
 Reset the instance. Loses all unprocessed data. This is called implicitly at instantiation time.
 The following methods are called when data or markup elements are encountered and they are meant to be overridden in a subclass. The base class implementations do nothing.
 
-CSSParser.handle_charset(self, charset)
+CSSParser.*handle_charset*(self, charset)
         
 This method is called to handle the charset.
 
-CSSParser.handle_ruleset(self):
+CSSParser.*handle_ruleset*(self):
 
 This method is called to handle the start of ruleset.
 
-CSSParser.handle_complex_selector(self):
+CSSParser.*handle_complex_selector*(self):
     
 This method is called to handle the start of ruleset selectors.
 
-CSSParser.handle_combinator(self):
+CSSParser.*handle_combinator*(self):
     
 This method is called to handle the combinator of a complex selector.
             
-CSSParser.handle_compound_selector(self):
+CSSParser.*handle_compound_selector* (self):
     
 This method is called to handle the start of compound selector.
 
-CSSParser.handle_simple_selector(self, selector_type = '', element = '', predicate = ''):
+CSSParser.*handle_simple_selector* (self, selector_type = '', element = '', predicate = ''):
     
 This method is called to handle the simple selector of a compound selector.
 
