@@ -91,7 +91,7 @@ CSSParser instances have the following methods:
 
 CSSParser.**feed**(_data_)
 
-> Feed some text to the parser. It is processed insofar as it consists of complete elements; incomplete data is buffered until more data is fed or close() is called. data must be str.
+Feed some text to the parser. It is processed insofar as it consists of complete elements; incomplete data is buffered until more data is fed or close() is called. data must be str.
 
 CSSParser.**close**()
 
