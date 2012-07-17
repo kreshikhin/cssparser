@@ -7,13 +7,13 @@ This module defines a class CSSParser which serves as the basis for parsing CSS 
 
 class cssparser.CSSParser(strict=True)
 
-    Create a parser instance. If strict is True (the default), invalid CSS results in CSSParseError exceptions. If strict is False, the parser uses heuristics to make a best guess at the intention of any invalid CSS it encounters, similar to the way most browsers do. Using strict=False is advised.
+Create a parser instance. If strict is True (the default), invalid CSS results in CSSParseError exceptions. If strict is False, the parser uses heuristics to make a best guess at the intention of any invalid CSS it encounters, similar to the way most browsers do. Using strict=False is advised.
 
 An exception is defined as well:
 
 exception cssparser.CSSParseError
 
-    Exception raised by the CSSParser class when it encounters an error while parsing and strict is True. This exception provides three attributes: msg is a brief message explaining the error, lineno is the number of the line on which the broken construct was detected, and offset is the number of characters into the line at which the construct starts.
+Exception raised by the CSSParser class when it encounters an error while parsing and strict is True. This exception provides three attributes: msg is a brief message explaining the error, lineno is the number of the line on which the broken construct was detected, and offset is the number of characters into the line at which the construct starts.
 
 
 Example CSS Parser Application
@@ -75,36 +75,36 @@ CSSParser.feed(data)
 
 CSSParser.close()
 
-> Force processing of all buffered data as if it were followed by an end-of-file mark. This method may be redefined by a derived class to define additional processing at the end of the input, but the redefined version should always call the CSSParser base class method close().
+Force processing of all buffered data as if it were followed by an end-of-file mark. This method may be redefined by a derived class to define additional processing at the end of the input, but the redefined version should always call the CSSParser base class method close().
 
 CSSParser.reset()
 
-> Reset the instance. Loses all unprocessed data. This is called implicitly at instantiation time.
-> The following methods are called when data or markup elements are encountered and they are meant to be overridden in a subclass. The base class implementations do nothing.
+Reset the instance. Loses all unprocessed data. This is called implicitly at instantiation time.
+The following methods are called when data or markup elements are encountered and they are meant to be overridden in a subclass. The base class implementations do nothing.
 
 CSSParser.handle_charset(self, charset)
         
-> This method is called to handle the charset.
+This method is called to handle the charset.
 
 CSSParser.handle_ruleset(self):
 
-> This method is called to handle the start of ruleset.
+This method is called to handle the start of ruleset.
 
 CSSParser.handle_complex_selector(self):
     
-> This method is called to handle the start of ruleset selectors.
+This method is called to handle the start of ruleset selectors.
 
 CSSParser.handle_combinator(self):
     
-> This method is called to handle the combinator of a complex selector.
+This method is called to handle the combinator of a complex selector.
             
 CSSParser.handle_compound_selector(self):
     
-> This method is called to handle the start of compound selector.
+This method is called to handle the start of compound selector.
 
 CSSParser.handle_simple_selector(self, selector_type = '', element = '', predicate = ''):
     
-> This method is called to handle the simple selector of a compound selector.
+This method is called to handle the simple selector of a compound selector.
 
 .............
 
