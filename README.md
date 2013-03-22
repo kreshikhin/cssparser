@@ -88,39 +88,47 @@ CSSParser Methods
 
 CSSParser instances have the following methods:
 
-
-CSSParser.**feed**(_data_)
-
-Feed some text to the parser. It is processed insofar as it consists of complete elements; incomplete data is buffered until more data is fed or close() is called. data must be str.
-
-CSSParser.**close**()
-
-Force processing of all buffered data as if it were followed by an end-of-file mark. This method may be redefined by a derived class to define additional processing at the end of the input, but the redefined version should always call the CSSParser base class method close().
-
-CSSParser.**reset**()
-
-Reset the instance. Loses all unprocessed data. This is called implicitly at instantiation time.
+<table>
+<tr>
+<td>CSSParser.feed(data)</td>
+<td>Feed some text to the parser. It is processed insofar as it consists of complete elements; incomplete data is buffered until more data is fed or close() is called. data must be str.</td>
+</tr>
+<tr>
+<td>CSSParser.close()</td>
+<td>Force processing of all buffered data as if it were followed by an end-of-file mark. This method may be redefined by a derived class to define additional processing at the end of the input, but the redefined version should always call the CSSParser base class method close().</td>
+</tr>
+<tr>
+<td>CSSParser.reset()</td>
+<td>Reset the instance. Loses all unprocessed data. This is called implicitly at instantiation time.
 The following methods are called when data or markup elements are encountered and they are meant to be overridden in a subclass. The base class implementations do nothing.
-
-CSSParser.**handle_charset**(*self, charset*)
-        
-This method is called to handle the charset.
-
-CSSParser.**handle_combinator**(*self*):
-    
-This method is called to handle the combinator wich joins compound selectors to complex selector.
-
-CSSParser.**handle_separator**(*self*):
-    
-This method is called to handle the start of ruleset selectors.
-            
-CSSParser.**handle_selector**(*self, selector_type = '', name = '', predicate = '', value = ''*):
-    
+</td>
+</tr>
+<tr>
+<td>CSSParser.handle_charset(self, charset)</td>       
+<td>This method is called to handle the charset.</td>
+</tr>
+<tr>
+<td>CSSParser.handle_combinator(self)</td>
+<td>This method is called to handle the combinator wich joins compound selectors to complex selector.</td>
+</tr>
+<tr>
+<td>CSSParser.handle_separator(self):</td>
+<td>This method is called to handle the start of ruleset selectors.</td>
+</tr>
+<tr>
+<td>
+CSSParser.handle_selector(self, selector_type = '', name = '', predicate = '', value = ''):
+</td>
+<td>
 This method is called to handle the simple selector as part of a compound selector.
-
-CSSParser.**handle_declaration**(*self, property_name = ''*):
-    
-This method is called to handle the declaration property.
-
+</td>
+</tr>
+<tr>
+<td>
+CSSParser.handle_declaration(self, property_name = ''):
+</td>
+<td>This method is called to handle the declaration property.
+</td>
+</table>
 
 [1]: http://www.w3.org/TR/CSS21/grammar.html
