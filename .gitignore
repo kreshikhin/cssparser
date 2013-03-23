@@ -1,5 +1,13 @@
 *.py[co]
 *.py~
+*.so
+*.dylib
+
+src/lex.yy.c
+src/lex.yy.h
+src/y.tab.c
+src/y.tab.h
+src/y.output
 
 # Packages
 *.egg
