@@ -1,298 +1,330 @@
-
 %{
-#include <stdio.h>
 #include "cssparser.h"
+
+int yylex(void);
+int yyerror(const char* message);
 %}
 
-%start stylesheet
+%error-verbose
+%locations
+/* ';' continues a declaration; another term continues an expr. */
+%expect 2
 
-%union{
+%union {
     char* string;
+    struct CssEventList* list;
 }
 
 %token <string> ANGLE
-%token <string> BAD_STRING
-%token <string> BAD_URI
-%token CDC CDO CHARSET_SYM
 %token <string> DASHMATCH
-%token DIMENSION
-%token EMS EXS
-%token S
-%token <string> STRING
+%token <string> DIMENSION
+%token <string> EMS
+%token <string> EXS
 %token <string> FREQ
-%token FUNCTION
+%token <string> FUNCTION
 %token <string> HASH
 %token <string> IDENT
 %token <string> INCLUDES
-%token IMPORT_SYM IMPORTANT_SYM
 %token <string> LENGTH
-%token MEDIA_SYM
 %token <string> NUMBER
-%token PAGE_SYM
-%token <string> PERCENTAGE 
+%token <string> PERCENTAGE
+%token <string> STRING
 %token <string> TIME
 %token <string> URI
 
-%type <string> type_selector
-%type <string> id_selector
-%type <string> class_selector
+%token BAD_STRING BAD_URI
+%token CHARSET_SYM
+%token IMPORT_SYM IMPORTANT_SYM MEDIA_SYM PAGE_SYM
+%token S
 
-%type <string> attrib_eq
-%type <string> attrib_value
+%type <string> attrib_eq attrib_value expr function hexcolor property term term_numeral
+%type <list> attribute_selector class_selector complex_selector compound_selector
+%type <list> id_selector pseudo_selector selector_list simple_selector type_selector
 
-%type <string> term
-%type <string> property
-%type <string> expr
+%start stylesheet
 
 %%
 
-stylesheet // : [ CHARSET_SYM STRING ';' ]?
-           //   [S|CDO|CDC]* [ import [ CDO S* | CDC S* ]* ]*
-           //   [ [ ruleset | media | page ] [ CDO S* | CDC S* ]* ]* ;
+stylesheet
     : charset comments import_block body
-;
+    ;
 
 charset
-    :
+    : /* empty */
     | CHARSET_SYM STRING ';'
-    {
-        PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_CHARSET, "s", $2);
-    }
-;
+        {
+            if (css_push_charset($2) < 0) YYABORT;
+        }
+    ;
 
 comments
-    :
+    : /* empty */
     | comments S
-    | comments CDO
-    | comments CDC
-;
+    ;
 
 import_block
-    :
-    | import subcomments
-;
+    : /* empty */
+    | import_block import
+    ;
 
-body
-    :
-    | body ruleset subcomments
-    | body media subcomments
-    | body page subcomments
-;
-
-subcomments
-    :
-    | subcomments CDO spaces
-    | subcomments CDC spaces
-;
-
-import // : IMPORT_SYM S* [STRING|URI] S* media_list? ';' S* ;
-    : IMPORT_SYM spaces STRING spaces media_list ';' spaces
-    | IMPORT_SYM spaces URI spaces media_list ';' spaces
-    | IMPORT_SYM spaces STRING spaces ';' spaces
+import
+    : IMPORT_SYM spaces STRING spaces ';' spaces
+        { (void)$3; }
     | IMPORT_SYM spaces URI spaces ';' spaces
-;
-    
-media // : MEDIA_SYM S* media_list '{' S* ruleset* '}' S* ;
+        { (void)$3; }
+    | IMPORT_SYM spaces STRING spaces media_list ';' spaces
+        { (void)$3; }
+    | IMPORT_SYM spaces URI spaces media_list ';' spaces
+        { (void)$3; }
+    ;
+
+media
     : MEDIA_SYM spaces media_list '{' spaces rulesets '}' spaces
-;
+    ;
 
 rulesets
-    :
+    : /* empty */
     | rulesets ruleset
-;
+    ;
 
-media_list // : medium [ COMMA S* medium]* ;
+media_list
     : medium
     | media_list ',' spaces medium
-;
+    ;
 
-medium // : IDENT S* ;
+medium
     : IDENT spaces
-;
+        { (void)$1; }
+    ;
 
-page // : PAGE_SYM S* pseudo_page?
-     //   '{' S* declaration? [ ';' S* declaration? ]* '}' S* ;
-    : PAGE_SYM spaces pseudo_page '{' page_declarations '}' spaces
-    | PAGE_SYM spaces '{' page_declarations '}' spaces
-;
+page
+    : PAGE_SYM spaces ':' IDENT spaces
+        {
+            struct CssEventList* selectors = css_list_new();
+            if (!selectors || css_list_add_selector(selectors, "pseudo", $4, "", "") < 0) YYABORT;
+            if (css_mark() < 0 || css_pending_add(selectors) < 0) YYABORT;
+        }
+        '{' spaces declarations '}' spaces
+        { css_commit(); }
+    | PAGE_SYM spaces
+        {
+            if (css_mark() < 0) YYABORT;
+        }
+        '{' spaces declarations '}' spaces
+        { css_commit(); }
+    ;
 
-page_declarations
-    : spaces declaration
-    | spaces
-    | page_declarations ';' spaces declaration
-    | page_declarations ';' spaces
-;
+body
+    : /* empty */
+    | body ruleset
+    | body media
+    | body page
+    ;
 
-pseudo_page // : ':' IDENT S* ;
-    : ':' IDENT spaces
-;
-
-operator // : '/' S* | ',' S* ;
-    : '/' spaces
-    | ',' spaces
-;
-
-combinator // : '+' S* | '>' S* ;
-    : '+' spaces
-    {
-        PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_COMBINATOR, "s", "+");
-    }
-    | '>' spaces
-    {
-        PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_COMBINATOR, "s", ">");
-    }
-;
-
-unary_operator // : '-' | '+' ;
-    : '-'
-    | '+'
-;
-
-property // : IDENT S* ;
-    : IDENT spaces
-    {
-        $$ = $1;
-    }
-;
-
-ruleset // : selector [ ',' S* selector ]* '{' S* declaration? [ ';' S* declaration? ]* '}' S* ;
-    : selector_list '{' spaces declarations '}' spaces
-    | selector_list '{' spaces '}' spaces
-;
+ruleset
+    : selector_list
+        {
+            if (css_mark() < 0 || css_pending_add($1) < 0) YYABORT;
+        }
+        '{' spaces declarations '}' spaces
+        { css_commit(); }
+    ;
 
 selector_list
     : complex_selector
-    | universal_selector
     | selector_list ',' spaces complex_selector
-    | selector_list ',' spaces universal_selector
-;
+        {
+            if (css_list_add_separator($1) < 0) YYABORT;
+            $$ = css_list_concat($1, $4);
+            if (!$$) YYABORT;
+        }
+    ;
 
-complex_selector // : simple_selector [ combinator selector | S+ [ combinator? selector ]? ]? ;
+complex_selector
     : compound_selector
-    | complex_selector combinator compound_selector
-    | complex_selector S compound_selector 
+    | complex_selector '+' spaces compound_selector
+        {
+            if (css_list_add_combinator($1, "+") < 0) YYABORT;
+            $$ = css_list_concat($1, $4);
+            if (!$$) YYABORT;
+        }
+    | complex_selector '>' spaces compound_selector
+        {
+            if (css_list_add_combinator($1, ">") < 0) YYABORT;
+            $$ = css_list_concat($1, $4);
+            if (!$$) YYABORT;
+        }
+    | complex_selector S compound_selector
+        {
+            if (css_list_add_combinator($1, " ") < 0) YYABORT;
+            $$ = css_list_concat($1, $3);
+            if (!$$) YYABORT;
+        }
     | complex_selector S
-        /* for space symbols skipping */
-;
+        { $$ = $1; }
+    ;
 
-universal_selector
-    :
-    | '*'
-;
-
-compound_selector // : element_name [ HASH | class | attrib | pseudo ]* | [ HASH | class | attrib | pseudo ]+ ;
-    : '*' type_selector
-    | type_selector
-    | '*' simple_selector
+compound_selector
+    : type_selector
     | simple_selector
     | compound_selector simple_selector
-;
+        {
+            $$ = css_list_concat($1, $2);
+            if (!$$) YYABORT;
+        }
+    ;
 
 simple_selector
     : attribute_selector
     | class_selector
     | id_selector
-    | pseudo_class_selector
-;
+    | pseudo_selector
+    ;
+
+type_selector
+    : IDENT
+        {
+            $$ = css_list_new();
+            if (!$$ || css_list_add_selector($$, "type", $1, "", "") < 0) YYABORT;
+        }
+    | '*'
+        {
+            $$ = css_list_new();
+            if (!$$ || css_list_add_selector($$, "type", "*", "", "") < 0) YYABORT;
+        }
+    ;
+
+class_selector
+    : '.' IDENT
+        {
+            $$ = css_list_new();
+            if (!$$ || css_list_add_selector($$, "class", $2, "", "") < 0) YYABORT;
+        }
+    ;
 
 id_selector
     : HASH
-    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ss", "id", $1); }
-;
+        {
+            const char* name = ($1 && $1[0] == '#') ? $1 + 1 : ($1 ? $1 : "");
+            $$ = css_list_new();
+            if (!$$ || css_list_add_selector($$, "id", name, "", "") < 0) YYABORT;
+        }
+    ;
 
-class_selector // : '.' IDENT ;
-    : '.' IDENT
-    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ss", "class", $2); }
-;
-
-type_selector // : IDENT | '*' ;
-    : IDENT
-    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ss", "type", $1); }
-;
-
-attribute_selector // : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH ] S* [ IDENT | STRING ] S* ]? ']';
+attribute_selector
     : '[' spaces IDENT spaces ']'
-    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ssss", "attribute", $3, NULL, NULL); }
+        {
+            $$ = css_list_new();
+            if (!$$ || css_list_add_selector($$, "attribute", $3, "", "") < 0) YYABORT;
+        }
     | '[' spaces IDENT spaces attrib_eq spaces attrib_value spaces ']'
-    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_SELECTOR, "ssss", "attribute", $3, $5, $7); }
-;
+        {
+            $$ = css_list_new();
+            if (!$$ || css_list_add_selector($$, "attribute", $3, $5, $7) < 0) YYABORT;
+        }
+    ;
 
 attrib_eq
-    : '='
-    {   $$ = "=";    }
-    | INCLUDES
-    {   $$ = $1;    }
-    | DASHMATCH
-    {   $$ = $1;    }
-;
+    : '='       { $$ = (char*)"="; }
+    | INCLUDES  { $$ = $1; }
+    | DASHMATCH { $$ = $1; }
+    ;
 
 attrib_value
-    : IDENT
-    {   $$ = $1;    }
-    | STRING
-    {   $$ = $1;    }
-;
+    : IDENT  { $$ = $1; }
+    | STRING { $$ = $1; }
+    ;
 
-pseudo_class_selector // : ':' [ IDENT | FUNCTION S* [IDENT S*]? ')' ] ;
-    : ':' pseudo_block
-;
-
-pseudo_block
-    : IDENT
-    | FUNCTION spaces pseudo_block_function_ident ')'
-;
-
-pseudo_block_function_ident
-    :
-    | IDENT spaces
-;
+pseudo_selector
+    : ':' IDENT
+        {
+            $$ = css_list_new();
+            if (!$$ || css_list_add_selector($$, "pseudo", $2, "", "") < 0) YYABORT;
+        }
+    | ':' FUNCTION spaces IDENT spaces ')'
+        {
+            char* name = css_func_name($2);
+            $$ = css_list_new();
+            if (!name || !$$ || css_list_add_selector($$, "pseudo", name, "", $4) < 0) YYABORT;
+        }
+    | ':' FUNCTION spaces ')'
+        {
+            char* name = css_func_name($2);
+            $$ = css_list_new();
+            if (!name || !$$ || css_list_add_selector($$, "pseudo", name, "", "") < 0) YYABORT;
+        }
+    ;
 
 declarations
-    : declaration
-    | declarations ';' spaces declaration
-    | declarations ';' spaces
-;
+    : /* empty */
+    | declarations declaration_item
+    ;
 
-declaration // : property ':' S* expr prio? ;
-    : property ':' spaces expr prio
-    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_DECLARATION, "ss", $1, $4); }
-    | property ':' spaces expr
-    { PyObject_CallMethod((PyObject*)global_self, CSSPARSER_HANDLE_DECLARATION, "ss", $1, $4); }
-;
+declaration_item
+    : declaration ';' spaces
+    | declaration
+    | ';' spaces
+    ;
 
-prio // : IMPORTANT_SYM S* ;
-    : IMPORTANT_SYM spaces
-;
+declaration
+    : property ':' spaces expr
+        {
+            if (css_push_declaration($1, $4) < 0) YYABORT;
+        }
+    | property ':' spaces expr IMPORTANT_SYM spaces
+        {
+            char* value = css_join2($4, " !important");
+            if (!value || css_push_declaration($1, value) < 0) YYABORT;
+        }
+    ;
 
-expr //: term [ operator? term ]*;
+property
+    : IDENT spaces
+        { $$ = $1; }
+    ;
+
+expr
     : term
-    {
-        $$ = $1;
-    }
-    | expr operator term
+        { $$ = $1; }
+    | expr '/' spaces term
+        {
+            $$ = css_join3($1, "/", $4);
+            if (!$$) YYABORT;
+        }
+    | expr ',' spaces term
+        {
+            $$ = css_join3($1, ", ", $4);
+            if (!$$) YYABORT;
+        }
     | expr term
-;
+        {
+            $$ = css_join3($1, " ", $2);
+            if (!$$) YYABORT;
+        }
+    ;
 
-term // : unary_operator?
-     // [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* | TIME S* | FREQ S* ]
-     // | STRING S* | IDENT S* | URI S* | hexcolor | function ;
-    : unary_operator term_numeral spaces
+term
+    : '-' term_numeral spaces
+        {
+            $$ = css_join2("-", $2);
+            if (!$$) YYABORT;
+        }
+    | '+' term_numeral spaces
+        {
+            $$ = css_join2("+", $2);
+            if (!$$) YYABORT;
+        }
     | term_numeral spaces
+        { $$ = $1; }
     | STRING spaces
-    {
-        $$ = $1;
-    }
+        { $$ = $1; }
     | IDENT spaces
-    {
-        $$ = $1;
-    }
+        { $$ = $1; }
     | URI spaces
-    {
-        $$ = $1;
-    }
+        { $$ = $1; }
     | hexcolor
     | function
-;
+    ;
 
 term_numeral
     : NUMBER
@@ -303,75 +335,36 @@ term_numeral
     | ANGLE
     | TIME
     | FREQ
-;      
+    ;
 
-function // : FUNCTION S* expr ')' S* ;
+function
     : FUNCTION spaces expr ')' spaces
-;
+        {
+            $$ = css_join3($1, $3, ")");
+            if (!$$) YYABORT;
+        }
+    ;
 
-
-// There is a constraint on the color that it must
-// have either 3 or 6 hex-digits (i.e., [0-9a-fA-F])
-// after the "#"; e.g., "#000" is OK, but "#abcd" is not.
-
-hexcolor // : HASH S* ;
+hexcolor
     : HASH spaces
-;
+        { $$ = $1; }
+    ;
 
 spaces
-    :
+    : /* empty */
     | spaces S
-;
+    ;
 
 %%
 
-/* main for manual testing */
-main(int argc, char** argv)
+int yyerror(const char* message)
 {
-    const char* usage = "usage: %s [infile [outfile]]\n";
-    char* outfile;
-    char* infile;
-    extern FILE *yyin, *yyout;
-    
-    char* progname = argv[0];
-    
-    if(argc > 3)
-    {
-        fprintf(stderr, usage, progname);
-        return 0;
+    int line = css_line > 0 ? css_line : 1;
+    int column = css_column >= 0 ? css_column : 0;
+    if (yylloc.first_line > 0) {
+        line = yylloc.first_line;
+        column = yylloc.first_column;
     }
-    
-    if(argc > 1)
-    {
-        infile = argv[1];
-        yyin = fopen(infile, "r");
-        
-        if(yyin == NULL)
-        {
-            fprintf(stderr, "%s: cannot open %s\n", progname, infile);
-            return 1;
-        }
-    }
-    
-    if(argc > 2)
-    {
-        infile = argv[2];
-        yyout = fopen(outfile, "w");
-        
-        if(yyout == NULL)
-        {
-            fprintf(stderr, "%s: cannot open %s\n", progname, outfile);
-            return 1;
-        }
-    }
-    
-    yyparse();
-    
+    css_fail_at(message && message[0] ? message : "invalid CSS syntax", line, column);
     return 0;
 }
-
-yyerror(char *s)
-{
-    //printf("%s\n", s);
-}
-
