@@ -128,6 +128,12 @@ ruleset
         }
         '{' spaces declarations '}' spaces
         { css_commit(); }
+    | error '}' spaces
+        {
+            css_rollback();
+            if (css_strict) YYABORT;
+            yyerrok;
+        }
     ;
 
 selector_list
@@ -264,6 +270,11 @@ declaration_item
     : declaration ';' spaces
     | declaration
     | ';' spaces
+    | error ';' spaces
+        {
+            if (css_strict) YYABORT;
+            yyerrok;
+        }
     ;
 
 declaration
@@ -324,6 +335,21 @@ term
         { $$ = $1; }
     | hexcolor
     | function
+    | BAD_STRING spaces
+        {
+            css_fail_at("invalid string", @1.first_line, @1.first_column);
+            YYERROR;
+        }
+    | BAD_URI spaces
+        {
+            css_fail_at("invalid URI", @1.first_line, @1.first_column);
+            YYERROR;
+        }
+    | DIMENSION spaces
+        {
+            css_fail_at("invalid dimension", @1.first_line, @1.first_column);
+            YYERROR;
+        }
     ;
 
 term_numeral
@@ -347,7 +373,13 @@ function
 
 hexcolor
     : HASH spaces
-        { $$ = $1; }
+        {
+            if (!css_valid_hexcolor($1)) {
+                css_fail_at("invalid hex color", @1.first_line, @1.first_column);
+                YYERROR;
+            }
+            $$ = $1;
+        }
     ;
 
 spaces
