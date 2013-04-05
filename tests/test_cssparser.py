@@ -132,6 +132,202 @@ div.logo
             ],
         )
 
+    def test_values_important_and_functions(self):
+        events = parse(
+            """
+            p {
+                margin: -10px;
+                height: 100%;
+                line-height: 1.1;
+                font: italic small-caps 12pt/14pt Arial, sans-serif;
+                color: red !important;
+                background: rgb(1, 2, 3);
+                width: 2em;
+            }
+            """
+        )
+        declarations = [event for event in events if event[0] == "declaration"]
+        self.assertEqual(
+            declarations,
+            [
+                ("declaration", "margin", "-10px"),
+                ("declaration", "height", "100%"),
+                ("declaration", "line-height", "1.1"),
+                ("declaration", "font", "italic small-caps 12pt/14pt Arial, sans-serif"),
+                ("declaration", "color", "red !important"),
+                ("declaration", "background", "rgb(1, 2, 3)"),
+                ("declaration", "width", "2em"),
+            ],
+        )
+
+    def test_at_rules(self):
+        events = parse(
+            """
+            @import "a.css";
+            @import url("b.css") print, screen;
+            @media screen, print {
+                div { color: red }
+            }
+            @page :first { margin: 1cm }
+            @page { margin: 2cm }
+            """
+        )
+        self.assertEqual(
+            events,
+            [
+                ("selector", "type", "div", "", ""),
+                ("declaration", "color", "red"),
+                ("selector", "pseudo", "first", "", ""),
+                ("declaration", "margin", "1cm"),
+                ("declaration", "margin", "2cm"),
+            ],
+        )
+
+    def test_comments_and_cdata_markers(self):
+        events = parse(
+            """
+            <!--
+            div { color: /* no */ blue }
+            -->
+            """
+        )
+        self.assertEqual(
+            events,
+            [
+                ("selector", "type", "div", "", ""),
+                ("declaration", "color", "blue"),
+            ],
+        )
+
+    def test_empty_declarations_and_omitted_semicolon(self):
+        events = parse("div { color: #123;; margin: 0 }")
+        self.assertEqual(
+            events,
+            [
+                ("selector", "type", "div", "", ""),
+                ("declaration", "color", "#123"),
+                ("declaration", "margin", "0"),
+            ],
+        )
+
+    def test_incremental_feed_and_reset(self):
+        parser = Collector()
+        parser.feed("div { color: ")
+        self.assertEqual(parser.events, [])
+        parser.feed("red }")
+        parser.close()
+        self.assertEqual(
+            parser.events,
+            [
+                ("selector", "type", "div", "", ""),
+                ("declaration", "color", "red"),
+            ],
+        )
+
+        parser.reset()
+        parser.events.clear()
+        parser.feed("span { color: ")
+        parser.reset()
+        parser.feed("em { color: blue }")
+        parser.close()
+        self.assertEqual(
+            parser.events,
+            [
+                ("selector", "type", "em", "", ""),
+                ("declaration", "color", "blue"),
+            ],
+        )
+
+    def test_strict_error_exposes_position(self):
+        parser = Collector()
+        with self.assertRaises(cssparser.CSSParseError) as caught:
+            parser.feed("*div { color: red }\n")
+            parser.close()
+        error = caught.exception
+        self.assertIsInstance(error.msg, str)
+        self.assertTrue(error.msg)
+        self.assertEqual(error.lineno, 1)
+        self.assertGreaterEqual(error.offset, 0)
+        self.assertIn(error.msg, str(error))
+        self.assertEqual(parser.events, [])
+
+    def test_strict_error_on_later_line(self):
+        parser = Collector()
+        parser.feed("div { color: red }\n")
+        with self.assertRaises(cssparser.CSSParseError) as caught:
+            parser.feed("span { color: ; }\n")
+            parser.close()
+        self.assertEqual(caught.exception.lineno, 2)
+        self.assertEqual(
+            parser.events,
+            [
+                ("selector", "type", "div", "", ""),
+                ("declaration", "color", "red"),
+            ],
+        )
+
+    def test_strict_invalid_hex_color(self):
+        parser = Collector()
+        with self.assertRaises(cssparser.CSSParseError) as caught:
+            parser.feed("div { color: #abcd }")
+            parser.close()
+        self.assertEqual(caught.exception.msg, "invalid hex color")
+        self.assertEqual(parser.events, [])
+
+    def test_nonstrict_skips_bad_selector_and_declaration(self):
+        events = parse(
+            """
+            *div { color: red }
+            div, *div { color: green }
+            p { color: #abcd; height: 10px; width: 12turn; margin: 1px }
+            """,
+            strict=False,
+        )
+        self.assertEqual(
+            events,
+            [
+                ("selector", "type", "p", "", ""),
+                ("declaration", "height", "10px"),
+                ("declaration", "margin", "1px"),
+            ],
+        )
+
+    def test_original_stylesheet_sample(self):
+        events = parse(
+            """@charset "utf-8";
+
+.sportid-logo
+{
+    background-color: white;
+    color: #265581;
+    font-size: 12pt;
+}
+
+:focus { font-size: 12pt; }
+
+.juggler:link, .juggler:visited { color: #246; }
+
+body > footer { margin: -10px; }
+body + footer { height: 100%; }
+body footer ul li { color: #CCF; }
+#bbbody footer .industry { }
+input[type="text"] { background-color: #EEE; }
+input[class~="special"] { background-color: #EEE; }
+"""
+        )
+        self.assertEqual(events[0], ("charset", '"utf-8"'))
+        self.assertIn(("selector", "class", "sportid-logo", "", ""), events)
+        self.assertIn(("selector", "pseudo", "focus", "", ""), events)
+        self.assertIn(("separator",), events)
+        self.assertIn(("combinator", ">"), events)
+        self.assertIn(("combinator", "+"), events)
+        self.assertIn(("combinator", " "), events)
+        self.assertIn(("selector", "id", "bbbody", "", ""), events)
+        self.assertIn(("selector", "attribute", "type", "=", '"text"'), events)
+        self.assertIn(("selector", "attribute", "class", "~=", '"special"'), events)
+        self.assertIn(("declaration", "margin", "-10px"), events)
+        self.assertIn(("declaration", "height", "100%"), events)
+
 
 if __name__ == "__main__":
     unittest.main()
