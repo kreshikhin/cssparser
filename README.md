@@ -1,9 +1,15 @@
 Python CSSParser
 ======
 
-Experimental Python module based on [w3.org lex/yacc][1] grammar.
+Experimental Python module based on the [CSS 2.1 lex/yacc grammar][1].
 
 This module defines a class CSSParser which serves as the basis for parsing CSS (Cascading Style Sheets) formatted files.
+
+Build with flex and bison installed:
+
+```
+python3 setup.py build_ext --inplace
+```
 
 *class* cssparser.**CSSParser**(*strict=True*)
 
@@ -13,7 +19,7 @@ An exception is defined as well:
 
 *exception* cssparser.**CSSParseError**
 
-Exception raised by the CSSParser class when it encounters an error while parsing and strict is True. This exception provides three attributes: msg is a brief message explaining the error, lineno is the number of the line on which the broken construct was detected, and offset is the number of characters into the line at which the construct starts.
+Exception raised by the CSSParser class when it encounters an error while parsing and strict is True. This exception provides three attributes: msg is a brief message explaining the error, lineno is the number of the line on which the broken construct was detected, and offset is the 0-based number of characters into the line at which the construct starts.
 
 
 Example CSS Parser Application
@@ -22,7 +28,7 @@ Example CSS Parser Application
 As a basic example, below is a simple CSS parser that uses the CSSParser class to print out start tags, end tags, and data as they are encountered:
 
 ```python
-fimport cssparser
+import cssparser
 
 class MyCSSParser(cssparser.CSSParser):
     def handle_charset(self, charset):
@@ -73,14 +79,14 @@ Encountered a selector: class logo
 Encountered a declaration: background-color white
 Encountered a declaration: color #265581
 Encountered a declaration: position relative
-Encountered a declaration: top top
-Encountered a declaration: margin margin
-Encountered a declaration: margin-top margin-top
-Encountered a declaration: padding padding
-Encountered a declaration: border border
-Encountered a declaration: border-radius border-radius
-Encountered a declaration: font-family 'Arial'
-Encountered a declaration: font-size font-size
+Encountered a declaration: top 2px
+Encountered a declaration: margin 3px
+Encountered a declaration: margin-top 10px
+Encountered a declaration: padding 2px
+Encountered a declaration: border 1px solid #265581
+Encountered a declaration: border-radius 3px
+Encountered a declaration: font-family 'Arial', bold
+Encountered a declaration: font-size 12pt
 ```
 
 CSSParser Methods
@@ -108,12 +114,12 @@ The following methods are called when data or markup elements are encountered an
 <td>This method is called to handle the charset.</td>
 </tr>
 <tr>
-<td>CSSParser.handle_combinator(self)</td>
-<td>This method is called to handle the combinator wich joins compound selectors to complex selector.</td>
+<td>CSSParser.handle_combinator(self, combinator)</td>
+<td>Called with the combinator that joins compound selectors: <code>+</code>, <code>&gt;</code>, or a single space for a descendant combinator.</td>
 </tr>
 <tr>
-<td>CSSParser.handle_separator(self):</td>
-<td>This method is called to handle the start of ruleset selectors.</td>
+<td>CSSParser.handle_separator(self)</td>
+<td>Called for the comma that separates selectors in a selector list.</td>
 </tr>
 <tr>
 <td>
@@ -125,9 +131,9 @@ This method is called to handle the simple selector as part of a compound select
 </tr>
 <tr>
 <td>
-CSSParser.handle_declaration(self, property_name = ''):
+CSSParser.handle_declaration(self, property_name, value)
 </td>
-<td>This method is called to handle the declaration property.
+<td>Called for a declaration. <code>value</code> is the property value; <code>!important</code> is included when present.
 </td>
 </table>
 
