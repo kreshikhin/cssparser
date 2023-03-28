@@ -1,6 +1,10 @@
 Python CSSParser
 ======
 
+[![CI](https://github.com/kreshikhin/cssparser/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/kreshikhin/cssparser/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![CSS 2.1](https://img.shields.io/badge/CSS-2.1-264de4)](https://www.w3.org/TR/CSS21/grammar.html)
+
 Experimental Python module based on the [CSS 2.1 lex/yacc grammar][1].
 
 This module defines a class CSSParser which serves as the basis for parsing CSS (Cascading Style Sheets) formatted files.
